@@ -8,28 +8,29 @@ declare -a passwordList=()
 declare -a guessedPasswordList=()
 declare -a emailList=()
 
+LOG_FILE=""
 TARGET_ROOT_DIR="/"
 
 # Output functions
 out () {
 	echo "$1"
-	echo "$1" >> "$working_path/output.log"
+	[ $LOG ] &&  { echo "$1" >> "$LOG_FILE"; }
 }
 note () {
 	echo -e "\033[40m\033[01;36m Note:\033[0m $1"
-	echo "Note: $1" >> "$working_path/output.log"
+	[ $LOG ] &&  { echo "Note: $1" >> "$LOG_FILE"; }
 }
 warning () {
 	echo -e "\033[40m\033[01;33m Warning:\033[0m $1" >&2
-	echo "Warning: $1" >> "$working_path/output.log"
+	[ $LOG ] && { echo "Warning: $1" >> "$LOG_FILE"; }
 }
 error () {
 	echo -e "\033[40m\033[1;31m [!] Error: $1\033[0m "  >&2
-	echo " [!] Error: $1" >> "$working_path/output.log"
+	[ $LOG ] &&  { echo " [!] Error: $1" >> "$LOG_FILE"; }
 }
 blue () {
 	echo -e "\033[40m\033[01;36m  $1 \033[0m"
-	echo  " $1 " >> "$working_path/output.log"
+	[ $LOG ] && { echo  " $1 " >> "$LOG_FILE"; }
 }
 
 # usage : ask "QUESTION"
@@ -54,13 +55,17 @@ function init () {
         echo -e "\033[40m\033[1;31m  [!]  Sorry, this script needs root access -> abort! $1\033[0m "  >&2
         exit 1
     fi
-    unset com
     # Create test folder
     mkdir -p "$working_path"
     # Next 3 lines are for security
     chown root:root "$working_path"
     chmod 700 "$working_path"
     cd "$working_path" || { echo -e "\033[40m\033[1;31m  [!] Init error -> abort! $1\033[0m "  >&2; exit 1; }
+    [ $LOG ]  && {
+        now=`date +%Y-%m-%d.%H:%M:%S`
+        LOG_FILE="$working_path/output_${now}.log"
+    }
+    
 }
 
 function end () { 
@@ -68,6 +73,7 @@ function end () {
     blue "SWAP Digger end, byebye! "
     out
     cd -
+    [ $CLEAN ] && rm "$working_path" -rf
     exit 0
 }
 
@@ -83,7 +89,7 @@ function dig_unix_passwd () {
     out " [+] Digging linux accounts credentials..."
     SHADOWHASHES="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -E '^\$.\$')"
     while read -r thishash; do
-        DUMP=`grep -C10 "$thishash" "$swap_dump_path"`
+        DUMP=`grep -C20 "$thishash" "$swap_dump_path"`
         CTYPE="$(echo "$thishash" | cut -c-3)"
         SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
         while read -r line; do
@@ -278,7 +284,7 @@ function guessing () {
     OLDIFS=$IFS; IFS=$'\n';
     for passwd in ${passwordList[*]}
     do
-        DUMP=`grep -C5 "$passwd" "$swap_dump_path" | egrep -vi "=|;|mail|session|nsI|login|number|desktop|<|/|\.com|--"` # We also remote special char responsible for too much false positive
+        DUMP=`grep -C5 "$passwd" "$swap_dump_path" | egrep -vi "=|;|mail|session|nsI|login|number|desktop|<|/|\.com|--"` # We also remove special char responsible for too much false positive
         # Search for other words near password
         while read -r line; do
             passwdSize=`echo "$passwd" | wc -c`
@@ -352,7 +358,7 @@ function swap_digger () {
     out
     blue "- SWAP Digger -"
     out
-
+    [ $LOG ] && note "Logging all outputs in $LOG_FILE"
     # Find swap partition
     [ -f "$swap_dump_path" ] || {
         out " [+] Looking for swap partition"
@@ -393,7 +399,9 @@ display_usage ()
 	echo "		Warning: This option is not reliable, it may dig more passwords as well as hundreds false positives."
 	echo "  -h, --help	Display this help."
     echo "  -v, --verbose	Verbose mode."
-    echo "  -r --root-path=PATH  Where is the target system root (default value is /)"
+    echo "  -l, --log	Log all output in a log file (protected inside the generated working directory)."
+    echo "  -c, --clean Automatically erase the generated working directory at end of script (will also remove log file)"
+    echo "  -r PATH, --root-path=PATH  Where is the target system root (default value is /)"
 	echo "		Change this for forensic analysis when target is mounted"
     echo "		Option not implemented!!"
 	echo
@@ -401,23 +409,33 @@ display_usage ()
 
 
 
-# Script will start here
-init
 
-# Process parameters
-while getopts "vlxgr:-" OPT
-do
-	# long options processing
-	[ $OPT = "-" ] && case "${OPTARG%%=*}" in
-		extended) OPT="x" ;;
-        guessing) OPT="g" ;;
-		help) OPT="h" ;;
-        root-path) OPT="r"; OPTARG="${OPTARG#*=}" ;;
-		verbose) OPT="v" ;;
-		*) display_usage; exit 1  ;;
-	esac
+# Script will start here
+
+# Transform long options to short ones
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--clean") set -- "$@" "-c" ;;
+    "--extended") set -- "$@" "-x" ;;
+    "--guessing") set -- "$@" "-g" ;;
+    "--log") set -- "$@" "-l" ;;
+    "--help") set -- "$@" "-h" ;;
+    "--verbose") set -- "$@" "-v" ;;
+    "--root-path") set -- "$@" "-r" ;;
+    "--"*) display_usage; exit 1 ;;
+    *)        set -- "$@" "$arg"
+  esac
+done
+
+# Parse short options
+OPTIND=1
+while getopts "cxglhv-r:" OPT
+do  
    # options processing
 	case $OPT in
+        c) CLEAN=1 ;;
+        l) LOG=1 ;;
         r) TARGET_ROOT_DIR="$OPTARG" ;;
 		x) EXTENDED=1 ;;
         g) GUESSING=1 ;;
@@ -426,7 +444,9 @@ do
 		*) display_usage; exit 1 ;;
 	esac
 done
+shift $(expr $OPTIND - 1) # remove options from positional parameters
 
+init
 swap_digger
 end
 
