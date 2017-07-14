@@ -89,7 +89,7 @@ function dig_unix_passwd () {
     out " [+] Digging linux accounts credentials..."
     SHADOWHASHES="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -E '^\$.\$')"
     while read -r thishash; do
-        DUMP=`grep -C20 "$thishash" "$swap_dump_path"`
+        DUMP=`grep -C40 "$thishash" "$swap_dump_path"`
         CTYPE="$(echo "$thishash" | cut -c-3)"
         SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
         while read -r line; do
