@@ -160,7 +160,6 @@ function dig_web_info () {
     done
     IFS=$OLDIFS
     out
-    out
     echo " [+] Looking for web passwords method 2 (JSON) ..."
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `grep "password\",\"value\":\"" "$swap_dump_path"`
@@ -175,7 +174,6 @@ function dig_web_info () {
 
     done
     IFS=$OLDIFS
-    out
     out
     echo " [+] Looking for web passwords method 3 (HTTP Basic Authentication) ..."
     OLDIFS=$IFS; IFS=$'\n';
@@ -386,9 +384,8 @@ function swap_digger () {
     # Find swap partition
     [ -f "$swap_dump_path" ] || {
         out " [+] Looking for swap partition"
-        swap=`cat ${TARGET_ROOT_DIR}etc/fstab | grep swap | cut -d " " -f 1`
+        swap=`cat /proc/swaps | grep -o "/[^ ]\+"`
         [ -b "$swap" ] || swap=`swapon -s | grep dev | cut -d " " -f 1`
-        [ -b "$swap" ] || swap=`cat ${TARGET_ROOT_DIR}etc/fstab | grep swap -m 1 | cut -d " " -f 5`
         [ -b "$swap" ] ||  { error "Could not find swap partition -> abort!"; exit 1; }
         out "     -> Found swap at ${swap}"
         
@@ -427,7 +424,7 @@ display_usage ()
     echo "  -c, --clean Automatically erase the generated working directory at end of script (will also remove log file)"
     echo "  -r PATH, --root-path=PATH  Where is the target system root (default value is /)"
 	echo "		Change this for forensic analysis when target is mounted"
-    echo "		Option not implemented!!"
+    echo "		TODO: Option not implemented!!"
 	echo
 }
 
@@ -475,7 +472,3 @@ swap_digger
 end
 
 
-# TODO
-# cat /proc/swaps
-# PASS=
-# /dev/tmpfs
