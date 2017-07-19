@@ -1,4 +1,4 @@
-# swap_digger
+# swap_digger by blog.sevagas.com
 
 
 Grep credentials information in Linux SWAP.
