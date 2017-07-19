@@ -37,7 +37,7 @@ blue () {
 # NOTE : Ask for confirmations (y/Y -> return 0, else 1)
 ask () {
 	echo -n " $@" '[y/n] '
-    echo -n " $@" '[y/n] ' >> "$working_path/output.log"
+    [ $LOG ] && { echo -n " $@" '[y/n] ' >> "$LOG_FILE"; }
 	local ans
 	read ans
 	case "$ans" in
@@ -50,7 +50,7 @@ ask () {
 function init () {    
     # init
     #User must be root
-    if [ `/usr/bin/id -u` -ne 0 ] # Use the fullpath of id (usually /usr/bin/id) & prevent aliasing of id
+    if [ `/usr/bin/id -u` -ne 0 ] 
     then
         echo -e "\033[40m\033[1;31m  [!]  Sorry, this script needs root access -> abort! $1\033[0m "  >&2
         exit 1
@@ -90,7 +90,7 @@ function dig_unix_passwd () {
     SHADOWHASHES="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -E '^\$.\$')"
     while read -r thishash; do
         [ $VERBOSE ] && out "   [-] Digging for hash: $thishash ..."
-        DUMP=`grep -C40 "$thishash" "$swap_dump_path"`
+        DUMP=`grep -C50 "$thishash" "$swap_dump_path"`
         CTYPE="$(echo "$thishash" | cut -c-3)"
         SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
         while read -r line; do
@@ -108,12 +108,12 @@ function dig_unix_passwd () {
     done <<< "$SHADOWHASHES"
     out
     nbHashes="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -c -E '^\$.\$')"
-    if [ ${#passwordList[@]} -lt $nbHashes ]
+    if [ ${#passwordList[@]} -lt $nbHashes ] && ask "Passwords not found. Attempt dictionary based attack? (Can last from 5 minutes to several hours depending on swap usage)"
     then
-        out " [+] Digging linux accounts credentials method 2 ... (dictionnary attack)"
+        out " [+] Digging linux accounts credentials method 2 ... (dictionary attack)"
         out "   [-] Generating wordlist file..."
         strings --bytes=8 "$swap_dump_path" | sort | uniq -d | sed '/^.\{20\}./d' > "$swap_wordlist_path"  # For performance we have to assume password is present more than once and if between 8 and 20 char
-        out "   [-] Digging passwords in wordlist... (This may take 5 to 20 minutes)"
+        out "   [-] Digging passwords in wordlist... (This may take 5min to few hours!)"
         SHADOWHASHES="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -E '^\$.\$')"
         while read -r thishash; do
             [ $VERBOSE ] && out "   [-] Digging for hash: $thishash ..."
@@ -138,7 +138,7 @@ function dig_unix_passwd () {
     nbHashes="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -c -E '^\$.\$')"
     if [ ${#passwordList[@]} -lt $nbHashes ]
     then
-        if john 2> /dev/null | grep -q cracker && ask "Passwords were not found and John was detected on the system, attempt to crack ${TARGET_ROOT_DIR}etc/shadow based on dumped swap wordlist?"
+        if john 2> /dev/null | grep -q cracker && ask "Passwords not found. John was detected on the system, attempt to crack ${TARGET_ROOT_DIR}etc/shadow based on dumped swap wordlist?"
         then
             out
             out " [+] Digging linux accounts credentials method 3... (John attack)"
@@ -440,7 +440,7 @@ function swap_digger () {
 # display_usage function
 display_usage ()
 {
-	echo
+	echo "Search for credentials in Linux system SWAP memory."
 	echo "Usage: $0 [ OPTIONS ]"
 	echo " Options : "
 	echo "  -x, --extended	Run extended tests on the target swap to retrieve other interesting data"
