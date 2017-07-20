@@ -3,8 +3,8 @@
 
 Author: Emeric NASI (Sio) at blog.sevagas.com
 
+swap_digger is a bash script used to automate Linux swap analysis during post-exploitation or forensics. It automates swap extraction and searches for Linux user credentials, web forms credentials, web forms emails, http basic authentication, Wifi SSID and keys, etc.
 
-Grep credentials information in Linux SWAP.
 For the most simple test, just run:
 
 # ./swap_digger 
