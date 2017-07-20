@@ -422,7 +422,7 @@ function swap_digger () {
         # TODO if TARGET_ROOT_DIR != /
 
         # Dumping swap strings
-        out " [+] Dumping swap strings in $swap_dump_path ... (this make take some time) "
+        out " [+] Dumping swap strings in $swap_dump_path ... (this may take some time) "
         strings --bytes=6 "$swap" > "$swap_dump_path"
     }
 
