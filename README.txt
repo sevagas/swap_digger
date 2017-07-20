@@ -11,7 +11,6 @@ For the most simple test, just run:
 -> Will attempt to find Linux user clear text password
 
 
-
 Other usages:
 
  ./swap_digger [ OPTIONS ]
@@ -26,6 +25,14 @@ Other usages:
   -c, --clean Automatically erase the generated working directory at end of script (will also remove log file)
 
 
-Blog posts concerning swap digger:
+ --
 
-  
+Blog posts about swap digging:
+ - http://blog.sevagas.com/?Digging-passwords-in-Linux-swap
+
+ --
+
+Feel free to message me on my twitter account @EmericNasi
+
+
+ --
