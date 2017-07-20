@@ -1,4 +1,5 @@
 #!/bin/bash
+# swap_digger by Emeric Nasi (Sio) at blog.sevagas.com
 
 declare -r  working_path="/tmp/swap_dig"
 declare -r swap_dump_path="${working_path}/swap_dump.txt"
@@ -100,16 +101,16 @@ function dig_unix_passwd () {
             if [[ $(python2 -c "import crypt; print crypt.crypt($CRYPT)") == "$thishash" ]]; then
                 #Find which user's password it is (useful if used more than once!)
                 USER="$(grep "${thishash}" /etc/shadow | cut -d':' -f 1)"
-                out "   [-] $USER:$line"
+                out "   -> $USER:$line"
                 passwordList=("${passwordList[@]}" "$line")
                 break
             fi
         done <<< "$DUMP"
     done <<< "$SHADOWHASHES"
-    out
     nbHashes="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -c -E '^\$.\$')"
     if [ ${#passwordList[@]} -lt $nbHashes ] && ask "Passwords not found. Attempt dictionary based attack? (Can last from 5 minutes to several hours depending on swap usage)"
     then
+        out
         out " [+] Digging linux accounts credentials method 2 ... (dictionary attack)"
         out "   [-] Generating wordlist file..."
         strings --bytes=8 "$swap_dump_path" | sort | uniq -d | sed '/^.\{20\}./d' > "$swap_wordlist_path"  # For performance we have to assume password is present more than once and if between 8 and 20 char
@@ -127,17 +128,17 @@ function dig_unix_passwd () {
                 if [[ $(python2 -c "import crypt; print crypt.crypt($CRYPT)") == "$thishash" ]]; then
                     #Find which user's password it is (useful if used more than once!)
                     USER="$(grep "${thishash}" /etc/shadow | cut -d':' -f 1)"
-                    out "   [-] $USER:$line"
+                    out "   -> $USER:$line"
                     passwordList=("${passwordList[@]}" "$line")
                     break
                 fi
             done <<< "$DUMP"
         done <<< "$SHADOWHASHES"
     fi
-    out
     nbHashes="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -c -E '^\$.\$')"
     if [ ${#passwordList[@]} -lt $nbHashes ]
     then
+        out
         if john 2> /dev/null | grep -q cracker && ask "Passwords not found. John was detected on the system, attempt to crack ${TARGET_ROOT_DIR}etc/shadow based on dumped swap wordlist?"
         then
             out
@@ -152,7 +153,7 @@ function dig_unix_passwd () {
                 OLDIFS=$IFS; IFS=$'\n';
                 for creds in `john --show ${TARGET_ROOT_DIR}etc/shadow`
                 do
-                    out "   [-] Found -> $creds"
+                    out "   -> $creds"
                     password=`echo $creds | cut -d ":" -f 2`
                     passwordList=("${passwordList[@]}" "$password") # Add found password to list
                 done
@@ -180,7 +181,7 @@ function dig_web_info () {
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `grep "&password=" "$swap_dump_path"`
     do
-        out "   [-] $entry"
+        out "   -> $entry"
         password=`echo "$entry" | grep -o 'password=[^&]\+' | cut -f 2 -d '='`
         passwdSize=`echo $password | wc -c`
         if [[ $passwdSize -gt 6 ]]
@@ -194,7 +195,7 @@ function dig_web_info () {
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `grep "password\",\"value\":\"" "$swap_dump_path"`
     do
-        out "   [-] $entry"
+        out "   -> $entry"
         password=`echo "$entry" | grep -o 'password\",\"value\":\"[^\"]\+' | cut -f 5 -d '"' `
         passwdSize=`echo $password | wc -c`
         if [[ $passwdSize -gt 6 ]]
@@ -211,7 +212,7 @@ function dig_web_info () {
     do
         CREDS="$(echo "$entry" | base64 -d)"
         if [[ "$CREDS" ]]; then
-            out "   [-] $CREDS"
+            out "   -> $CREDS"
             password=`echo "$CREDS" | cut -f 2 -d ":"`
             passwordList=("${passwordList[@]}" "$password") # Add found password to list
         fi
@@ -235,7 +236,7 @@ function dig_web_info () {
     OLDIFS=$IFS; IFS=$'\n';
     for email in ${emailList[*]}
     do
-        out "  ->  $email"
+        out "   ->  $email"
     done
     IFS=$OLDIFS
 
@@ -451,9 +452,9 @@ display_usage ()
     echo "  -v, --verbose	Verbose mode."
     echo "  -l, --log	Log all output in a log file (protected inside the generated working directory)."
     echo "  -c, --clean Automatically erase the generated working directory at end of script (will also remove log file)"
-    echo "  -r PATH, --root-path=PATH  Where is the target system root (default value is /)"
-	echo "		Change this for forensic analysis when target is mounted"
-    echo "		TODO: Option not implemented!!"
+    #echo "  -r PATH, --root-path=PATH  Where is the target system root (default value is /)"
+	#echo "		Change this for forensic analysis when target is mounted"
+    #echo "		TODO: Option not implemented!!"
 	echo
 }
 

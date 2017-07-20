@@ -1,11 +1,13 @@
-# swap_digger by blog.sevagas.com
+ 
+  --  swap_digger --
+
+Author: Emeric NASI (Sio) at blog.sevagas.com
 
 
 Grep credentials information in Linux SWAP.
 For the most simple test, just run:
 
 # ./swap_digger 
-
 -> Will attempt to find Linux user clear text password
 
 
@@ -23,3 +25,7 @@ Other usages:
   -l, --log	Log all output in a log file (protected inside the generated working directory).
   -c, --clean Automatically erase the generated working directory at end of script (will also remove log file)
 
+
+Blog posts concerning swap digger:
+
+  
