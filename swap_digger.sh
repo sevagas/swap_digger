@@ -411,21 +411,22 @@ function swap_digger () {
     blue "- SWAP Digger -"
     [ $LOG ] && note "Logging all outputs in $LOG_FILE"
     # Find swap partition
-    [ -f "$swap_dump_path" ] || {
-        out
+    out
+    if [ -f "$swap_dump_path" ] 
+    then
+        out " [+] Swap already dumped at $swap_dump_path"
+    else
         out " [+] Looking for swap partition"
         swap=`cat /proc/swaps | grep -o "/[^ ]\+"`
         [ -b "$swap" ] || swap=`swapon -s | grep dev | cut -d " " -f 1`
         [ -b "$swap" ] ||  { error "Could not find swap partition -> abort!"; exit 1; }
         out "     -> Found swap at ${swap}"
-        
-        # TODO if TARGET_ROOT_DIR != /
-
         # Dumping swap strings
         out " [+] Dumping swap strings in $swap_dump_path ... (this may take some time) "
         strings --bytes=6 "$swap" > "$swap_dump_path"
-    }
-
+    fi
+    swap_dump_size=`ls -lh $swap_dump_path | cut -d " "  -f 5`
+    [ $VERBOSE ] && out "    [-] Swap dump size: $swap_dump_size"
     # Let the fun begin!
     dig_unix_passwd
     [ $EXTENDED ] && {
