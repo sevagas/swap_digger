@@ -49,7 +49,6 @@ ask () {
 
 
 function init () {    
-    # init
     #User must be root
     if [ `/usr/bin/id -u` -ne 0 ] 
     then
@@ -67,6 +66,14 @@ function init () {
         LOG_FILE="$working_path/output_${now}.log"
     }
     
+    out
+    blue "- SWAP Digger -"
+    [ $LOG ] && note "Logging all outputs in $LOG_FILE"
+    out
+    # Check param values
+    [ $SWAP_PATH ] &&  ! [ -e "$SWAP_PATH" ] && { error "Invalid path for swap file!"; exit 1; }
+    ! [ -d "$TARGET_ROOT_DIR" ] && { error "Invalid path for root directory!"; exit 1; }
+    
 }
 
 function end () { 
@@ -79,14 +86,14 @@ function end () {
 }
 
 
-
-
 function dig_unix_passwd () {
     # Looking for linux account passwords (ubuntu)wc -l
     out
     out
     blue " ==== Linux system accounts ==="
     out
+    [ $VERBOSE ] && out " [+] Using shadow file: ${TARGET_ROOT_DIR}etc/shadow..."
+    [ -f "${TARGET_ROOT_DIR}etc/shadow" ] || { error "${TARGET_ROOT_DIR}etc/shadow: No such file."; return 1; }
     out " [+] Digging linux accounts credentials... (pattern attack)"
     SHADOWHASHES="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -E '^\$.\$')"
     while read -r thishash; do
@@ -100,7 +107,7 @@ function dig_unix_passwd () {
             CRYPT="\"$SAFE\", \"$CTYPE$SHADOWSALT\""
             if [[ $(python2 -c "import crypt; print crypt.crypt($CRYPT)") == "$thishash" ]]; then
                 #Find which user's password it is (useful if used more than once!)
-                USER="$(grep "${thishash}" /etc/shadow | cut -d':' -f 1)"
+                USER="$(grep "${thishash}" ${TARGET_ROOT_DIR}etc/shadow | cut -d':' -f 1)"
                 out "   -> $USER:$line"
                 passwordList=("${passwordList[@]}" "$line")
                 break
@@ -127,7 +134,7 @@ function dig_unix_passwd () {
                 CRYPT="\"$SAFE\", \"$CTYPE$SHADOWSALT\""
                 if [[ $(python2 -c "import crypt; print crypt.crypt($CRYPT)") == "$thishash" ]]; then
                     #Find which user's password it is (useful if used more than once!)
-                    USER="$(grep "${thishash}" /etc/shadow | cut -d':' -f 1)"
+                    USER="$(grep "${thishash}" ${TARGET_ROOT_DIR}etc/shadow | cut -d':' -f 1)"
                     out "   -> $USER:$line"
                     passwordList=("${passwordList[@]}" "$line")
                     break
@@ -167,7 +174,6 @@ function dig_unix_passwd () {
             fi
         fi
     fi
-
 }
 
 
@@ -407,23 +413,28 @@ function guessing () {
 
 
 function swap_digger () {
-    out
-    blue "- SWAP Digger -"
-    [ $LOG ] && note "Logging all outputs in $LOG_FILE"
+
     # Find swap partition
-    out
     if [ -f "$swap_dump_path" ] 
     then
-        out " [+] Swap already dumped at $swap_dump_path"
+        out " [+] Swap dump already available at $swap_dump_path"
     else
-        out " [+] Looking for swap partition"
-        swap=`cat /proc/swaps | grep -o "/[^ ]\+"`
-        [ -b "$swap" ] || swap=`swapon -s | grep dev | cut -d " " -f 1`
-        [ -b "$swap" ] ||  { error "Could not find swap partition -> abort!"; exit 1; }
-        out "     -> Found swap at ${swap}"
-        # Dumping swap strings
-        out " [+] Dumping swap strings in $swap_dump_path ... (this may take some time) "
-        strings --bytes=6 "$swap" > "$swap_dump_path"
+        if [ -e "$SWAP_PATH" ]
+        then
+            out " [+] Using $SWAP_PATH as swap partition"
+            # Dumping swap strings
+            out " [+] Dumping swap strings in $swap_dump_path ... (this may take some time) "
+            strings --bytes=6 "$SWAP_PATH" > "$swap_dump_path"
+        else
+            out " [+] Looking for swap partition"
+            swap=`cat /proc/swaps | grep -o "/[^ ]\+"`
+            [ -b "$swap" ] || swap=`swapon -s | grep dev | cut -d " " -f 1`
+            [ -b "$swap" ] ||  { error "Could not find swap partition -> abort!"; exit 1; }
+            out "     -> Found swap at ${swap}"
+            # Dumping swap strings
+            out " [+] Dumping swap strings in $swap_dump_path ... (this may take some time) "
+            strings --bytes=6 "$swap" > "$swap_dump_path"
+        fi
     fi
     swap_dump_size=`ls -lh $swap_dump_path | cut -d " "  -f 5`
     [ $VERBOSE ] && out "    [-] Swap dump size: $swap_dump_size"
@@ -439,23 +450,64 @@ function swap_digger () {
 }
 
 
+# Test if is swap device / swap dump
+function isSwap () {
+    if [ -e "$1" ] && strings "$1" 2>/dev/null | head -c10 | grep -q "SWAPSPACE"
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
+# Search for available swap partitiont / files
+function swap_search () {
+    out " [+] Current swap file:"
+    swap=`cat /proc/swaps | grep -o "/[^ ]\+"`
+    if isSwap "$swap"
+    then
+        out "   -> $swap"
+    else
+        out "   -> None"
+    fi
+    out " [+] ${TARGET_ROOT_DIR}etc/fstab swap files:"
+    swap=`cat ${TARGET_ROOT_DIR}etc/fstab | grep swap | cut -d " " -f 1`
+    isSwap "$swap"  && out "   -> $swap"
+    swap=`cat ${TARGET_ROOT_DIR}etc/fstab | grep swap -m 1 | cut -d " " -f 5`
+    isSwap "$swap"  && out "   -> $swap"
+    out " [+] Looking for all available swap device files (will take some time):"
+    OLDIFS=$IFS; IFS=$'\n';
+    for file in `find / -type b  2>/dev/null`
+    do
+        isSwap "$file" && out "   -> $file"
+    done
+    IFS=$OLDIFS
+    
+}
+
+
 # display_usage function
 display_usage ()
 {
 	echo "Search for credentials in Linux system SWAP memory."
 	echo "Usage: $0 [ OPTIONS ]"
 	echo " Options : "
-	echo "  -x, --extended	Run extended tests on the target swap to retrieve other interesting data"
+	echo "  -x, --extendedRun Extended tests on the target swap to retrieve other interesting data"
 	echo "		(web passwords, emails, wifi creds, etc)"
-    echo "  -g, --guessing	Try to guess potential passwords based on observations and stats"
+    echo "  -g, --guessing  Try to guess potential passwords based on observations and stats"
 	echo "		Warning: This option is not reliable, it may dig more passwords as well as hundreds false positives."
 	echo "  -h, --help	Display this help."
     echo "  -v, --verbose	Verbose mode."
-    echo "  -l, --log	Log all output in a log file (protected inside the generated working directory)."
+    echo "  -l, --log	Log all outputs in a log file (protected inside the generated working directory)."
     echo "  -c, --clean Automatically erase the generated working directory at end of script (will also remove log file)"
-    #echo "  -r PATH, --root-path=PATH  Where is the target system root (default value is /)"
-	#echo "		Change this for forensic analysis when target is mounted"
-    #echo "		TODO: Option not implemented!!"
+    echo "  -r PATH, --root-path=PATH   Location of the target file-system root (default value is /)"
+	echo "		Change this value for forensic analysis when target is a mounted file system."
+    echo "		This option has to  be used along the -s option to indicate path to swap device."
+    echo "  -s PATH, --swap-path=PATH   Location of swap device or swap dump to analyse"
+    echo "		Use this option for forensic/remote analysis of a swap dump or a mounted external swap partition."
+    echo "		This option should be used with the -r option where at least /<root-path>/etc/shadow exists."
+    echo "  -S, --swap-search   Search for all available swap devices (use for forensics)."
 	echo
 }
 
@@ -475,6 +527,8 @@ for arg in "$@"; do
     "--help") set -- "$@" "-h" ;;
     "--verbose") set -- "$@" "-v" ;;
     "--root-path") set -- "$@" "-r" ;;
+    "--swap-path") set -- "$@" "-s" ;;
+    "--swap-search") set -- "$@" "-S" ;;
     "--"*) display_usage; exit 1 ;;
     *)        set -- "$@" "$arg"
   esac
@@ -482,24 +536,30 @@ done
 
 # Parse short options
 OPTIND=1
-while getopts "cxglhv-r:" OPT
+while getopts "cxglhvS-r:s:" OPT
 do  
    # options processing
 	case $OPT in
         c) CLEAN=1 ;;
         l) LOG=1 ;;
         r) TARGET_ROOT_DIR="$OPTARG" ;;
+        s) SWAP_PATH="$OPTARG" ;;
 		x) EXTENDED=1 ;;
         g) GUESSING=1 ;;
 		h) display_usage | more;  exit 3  ;;
 		v) VERBOSE=1 ;;
+        S) SWAP_SEARCH=1 ;;
 		*) display_usage; exit 1 ;;
 	esac
 done
 shift $(expr $OPTIND - 1) # remove options from positional parameters
-
 init
-swap_digger
+if [ $SWAP_SEARCH ]
+then
+    swap_search
+else
+    swap_digger
+fi
 end
 
 
