@@ -312,6 +312,68 @@ function dig_keepass () {
 
 function stringContain() { [ -z "${2##*$1*}" ]; }
 
+
+#function dig_hash () {
+    # grep "^network-probe:" swap_dump.txt
+    # grep "^hls:" swap_dump.txt
+    # grep "^sha256:" swap_dump.txt
+    # grep "^md5:" swap_dump.txt
+    
+#}
+# cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
+
+function dig_history () {
+    out
+    out
+    blue " ==== Mining most accessed resources ==="
+    out
+    out " [+] TOP 30 accessed HTTP/HTTPS URLs (domains only)"
+    OLDIFS=$IFS; IFS=$'\n';
+    for entry in `egrep -o 'https?://[-A-Za-z0-9\+&@#%?=~_|!:,.;]+' "$swap_dump_path" | sort | uniq -cd | sort -k1,1nr | head -n 30`
+    do
+        out "   -> $entry"
+    done
+    IFS=$OLDIFS
+    out
+    out
+    out " [+] TOP 30 accessed FTP URLs"
+    OLDIFS=$IFS; IFS=$'\n';
+    for entry in `egrep -o 'ftp://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]' "$swap_dump_path" | sort | uniq -c | sort -k1,1nr | head -n 30`
+    do
+        out "   -> $entry"
+    done
+    IFS=$OLDIFS
+    out
+    out
+    out " [+] TOP 30 accessed .onion urls"
+    OLDIFS=$IFS; IFS=$'\n';
+    for entry in `egrep -o 'https?://[-A-Za-z0-9\+&@#%?=~_|!:,.;]*\.onion/*[-A-Za-z0-9\+&@#/%=~_|]*'  "$swap_dump_path" | sort | uniq -c | sort -k1,1nr | head -n 30`
+    do
+        out "   -> $entry"
+    done
+    IFS=$OLDIFS
+    out
+    out
+    out " [+] TOP 30 accessed files"
+    OLDIFS=$IFS; IFS=$'\n';
+    for entry in `egrep -o 'file://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]' "$swap_dump_path" | sort | uniq -cd | sort -k1,1nr | head -n 30`
+    do
+        out "   -> $entry"
+    done
+    IFS=$OLDIFS
+    out
+    out
+    out " [+] TOP 30 accessed smb shares"
+    OLDIFS=$IFS; IFS=$'\n';
+    for entry in `egrep -o 'smb://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]' "$swap_dump_path" | sort | uniq -cd | sort -k1,1nr | head -n 30`
+    do
+        out "   -> $entry"
+    done
+    IFS=$OLDIFS
+    
+}
+
+
 function guessing () {
 
     out
@@ -444,6 +506,7 @@ function swap_digger () {
         dig_web_info
         dig_wifi_info
         dig_keepass
+        dig_history
     }
     [ $GUESSING ] && guessing
 
@@ -494,7 +557,7 @@ display_usage ()
 	echo "Usage: $0 [ OPTIONS ]"
 	echo " Options : "
 	echo "  -x, --extendedRun Extended tests on the target swap to retrieve other interesting data"
-	echo "		(web passwords, emails, wifi creds, etc)"
+	echo "		(web passwords, emails, wifi creds, most accessed urls, etc)"
     echo "  -g, --guessing  Try to guess potential passwords based on observations and stats"
 	echo "		Warning: This option is not reliable, it may dig more passwords as well as hundreds false positives."
 	echo "  -h, --help	Display this help."
@@ -510,8 +573,6 @@ display_usage ()
     echo "  -S, --swap-search   Search for all available swap devices (use for forensics)."
 	echo
 }
-
-
 
 
 # Script will start here
