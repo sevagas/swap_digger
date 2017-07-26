@@ -516,7 +516,7 @@ function swap_digger () {
 
 # Test if is swap device / swap dump
 function isSwap () {
-    if [ -e "$1" ] && strings "$1" 2>/dev/null | head -c10 | grep -q "SWAPSPACE"
+    if [ -e "$1" ] && strings "$1" 2>/dev/null | head -c20 | grep -q "SWAPSPACE"
     then
         return 0
     else
