@@ -5,13 +5,43 @@ Author: Emeric NASI (Sio) at blog.sevagas.com
 
 swap_digger is a bash script used to automate Linux swap analysis during post-exploitation or forensics. It automates swap extraction and searches for Linux user credentials, web forms credentials, web forms emails, http basic authentication, Wifi SSID and keys, etc.
 
-For the most simple test, just run:
 
+-----------------------------------
+Download and complete run on your machine (for forensics or if you want to see what is available in your swap)
+
+# git clone https://github.com/sevagas/swap_digger.git
+# cd swap_digger
+# chmod +x swap_digger.sh
+# ./swap_digger -vx
+
+For forensics on a mounted hard drive:
+
+Get target swap file/partition with
+# ./swap_digger -S      
+
+Analyse target with
+# ./swap_digger -vx -r <path_to_mounted_target_root_filesystem> -s <path_to_target_swap_device>
+
+
+----------------------------------
+Download and complete run in a third party machine (for post exploitation in pentests or CTFs):
+ 
+# wget https://raw.githubusercontent.com/sevagas/swap_digger/master/swap_digger.sh
+# chmod +x swap_digger.sh
+# ./swap_digger -vx
+
+Note: Use "-c" option to automatically remove the directory created by swap_digger (/tmp/swap_dig).
+ 
+ 
+ ---------------------------------
+
+If you just want to grab linux users acounts clear text passwords run:
 # ./swap_digger 
--> Will attempt to find Linux user clear text password
 
 
-Other usages:
+ ---------------------------------
+
+All options:
 
  ./swap_digger [ OPTIONS ]
  Options : 
@@ -31,12 +61,14 @@ Other usages:
 		This option should be used with the -r option where at least /<root-path>/etc/shadow exists.
   -S, --swap-search   Search for all available swap devices (use for forensics).
   
- --
+  
+ ---------------------------------
 
 Blog posts about swap digging:
  - http://blog.sevagas.com/?Digging-passwords-in-Linux-swap
 
- --
+
+ ---------------------------------
 
 Feel free to message me on my twitter account @EmericNasi
 
