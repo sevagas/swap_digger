@@ -647,15 +647,4 @@ else
 fi
 end
 
-# TODOs
-#function dig_hash () {
-    # grep "^network-probe:" swap_dump.txt
-    # grep "^hls:" swap_dump.txt
-    # grep "^sha256:" swap_dump.txt
-    # grep "^md5:" swap_dump.txt
-    
-#}
-# cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
-# aeskeyfind, rsakeyfind (binary dump?)
-# mysql -u x -p y ?
-# grep -A1 "^sudo " ../siben_QsaeKWEb.txt | grep XXX
+
