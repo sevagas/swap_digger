@@ -12,15 +12,15 @@ Download and complete run on your machine (for forensics or if you want to see w
 # git clone https://github.com/sevagas/swap_digger.git
 # cd swap_digger
 # chmod +x swap_digger.sh
-# ./swap_digger -vx
+# ./swap_digger.sh -vx
 
 For forensics on a mounted hard drive:
 
 Get target swap file/partition with
-# ./swap_digger -S      
+# ./swap_digger.sh -S      
 
 Analyse target with
-# ./swap_digger -vx -r <path_to_mounted_target_root_filesystem> -s <path_to_target_swap_device>
+# ./swap_digger.sh -vx -r <path_to_mounted_target_root_filesystem> -s <path_to_target_swap_device>
 
 
 ----------------------------------
@@ -28,7 +28,7 @@ Download and complete run in a third party machine (for post exploitation in pen
  
 # wget https://raw.githubusercontent.com/sevagas/swap_digger/master/swap_digger.sh
 # chmod +x swap_digger.sh
-# ./swap_digger -vx
+# ./swap_digger.sh -vx
 
 Note: Use "-c" option to automatically remove the directory created by swap_digger (/tmp/swap_dig).
  
@@ -36,14 +36,15 @@ Note: Use "-c" option to automatically remove the directory created by swap_digg
  ---------------------------------
 
 If you just want to grab linux users acounts clear text passwords run:
-# ./swap_digger 
+# ./swap_digger.sh
+
 
 
  ---------------------------------
 
 All options:
 
- ./swap_digger [ OPTIONS ]
+ ./swap_digger.sh [ OPTIONS ]
  Options : 
   -x, --extendedRun Extended tests on the target swap to retrieve other interesting data
 		(web passwords, emails, wifi creds, most accessed urls, etc)
