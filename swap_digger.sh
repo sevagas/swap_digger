@@ -249,6 +249,29 @@ function dig_web_info () {
 }
 
 
+function dig_xml() {
+    out
+    out
+    blue " ==== XML data ==="
+    out
+    out " [+] Looking for xml passwords ..."
+    OLDIFS=$IFS; IFS=$'\n';
+    for entry in `grep -o -E  "<password>.+</password>" "$swap_dump_path"`
+    do
+        around=`grep -C1 "$entry" "$swap_dump_path"`
+        out "   -> $around"
+        password=`echo "$entry" | cut -f 2 -d '>' | cut -f 1 -d '<'`
+        passwdSize=`echo $password | wc -c`
+        if [[ $passwdSize -gt 3 ]]
+        then
+            passwordList=("${passwordList[@]}" "$password") # Add found password to list
+        fi
+    done
+    IFS=$OLDIFS
+    
+}
+
+
 function dig_wifi_info () {
     # Looking for wifi credentials
     out
@@ -504,6 +527,7 @@ function swap_digger () {
     dig_unix_passwd
     [ $EXTENDED ] && {
         dig_web_info
+        dig_xml
         dig_wifi_info
         dig_keepass
         dig_history
@@ -634,4 +658,4 @@ end
 # cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
 # aeskeyfind, rsakeyfind (binary dump?)
 # mysql -u x -p y ?
-
+# grep -A1 "^sudo " ../siben_QsaeKWEb.txt | grep XXX
