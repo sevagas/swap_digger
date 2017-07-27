@@ -100,7 +100,6 @@ function dig_unix_passwd () {
         USER="$(grep "${thishash}" ${TARGET_ROOT_DIR}etc/shadow | cut -d':' -f 1)"
         [ $VERBOSE ] && out "   [-] Digging for hash: $thishash  ($USER) ..."
         DUMP=`grep -C40 -E "$thishash|_pammodutil_getpwnam" "$swap_dump_path"`
-        # Add _pammodutil_getpwnam
         CTYPE="$(echo "$thishash" | cut -c-3)"
         SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
         while read -r line; do
@@ -314,21 +313,12 @@ function dig_keepass () {
 function stringContain() { [ -z "${2##*$1*}" ]; }
 
 
-#function dig_hash () {
-    # grep "^network-probe:" swap_dump.txt
-    # grep "^hls:" swap_dump.txt
-    # grep "^sha256:" swap_dump.txt
-    # grep "^md5:" swap_dump.txt
-    
-#}
-# cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
-
 function dig_history () {
     out
     out
     blue " ==== Mining most accessed resources ==="
     out
-    out " [+] TOP 30 accessed HTTP/HTTPS URLs (domains only)"
+    out " [+] TOP 30 HTTP/HTTPS URLs (domains only)"
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `egrep -o 'https?://[-A-Za-z0-9\+&@#%?=~_|!:,.;]+' "$swap_dump_path" | sort | uniq -cd | sort -k1,1nr | head -n 30`
     do
@@ -337,7 +327,7 @@ function dig_history () {
     IFS=$OLDIFS
     out
     out
-    out " [+] TOP 30 accessed FTP URLs"
+    out " [+] TOP 30 FTP URLs"
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `egrep -o 'ftp://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]' "$swap_dump_path" | sort | uniq -c | sort -k1,1nr | head -n 30`
     do
@@ -346,7 +336,7 @@ function dig_history () {
     IFS=$OLDIFS
     out
     out
-    out " [+] TOP 30 accessed .onion urls"
+    out " [+] TOP 30 .onion urls"
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `egrep -o 'https?://[-A-Za-z0-9\+&@#%?=~_|!:,.;]*\.onion/*[-A-Za-z0-9\+&@#/%=~_|]*'  "$swap_dump_path" | sort | uniq -c | sort -k1,1nr | head -n 30`
     do
@@ -355,7 +345,7 @@ function dig_history () {
     IFS=$OLDIFS
     out
     out
-    out " [+] TOP 30 accessed files"
+    out " [+] TOP 30 files"
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `egrep -o 'file://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]' "$swap_dump_path" | sort | uniq -cd | sort -k1,1nr | head -n 30`
     do
@@ -364,9 +354,18 @@ function dig_history () {
     IFS=$OLDIFS
     out
     out
-    out " [+] TOP 30 accessed smb shares"
+    out " [+] TOP 30 smb shares"
     OLDIFS=$IFS; IFS=$'\n';
     for entry in `egrep -o 'smb://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]' "$swap_dump_path" | sort | uniq -cd | sort -k1,1nr | head -n 30`
+    do
+        out "   -> $entry"
+    done
+    IFS=$OLDIFS
+    out
+    out
+    out " [+] TOP 30 IP addresses (lots of false positives, ex. file versions)"
+    OLDIFS=$IFS; IFS=$'\n';
+    for entry in `grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" swap_dump.txt | sort | uniq -c | sort -k1,1nr | head -n 30`
     do
         out "   -> $entry"
     done
@@ -624,4 +623,15 @@ else
 fi
 end
 
+# TODOs
+#function dig_hash () {
+    # grep "^network-probe:" swap_dump.txt
+    # grep "^hls:" swap_dump.txt
+    # grep "^sha256:" swap_dump.txt
+    # grep "^md5:" swap_dump.txt
+    
+#}
+# cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
+# aeskeyfind, rsakeyfind (binary dump?)
+# mysql -u x -p y ?
 
