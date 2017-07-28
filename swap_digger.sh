@@ -99,7 +99,7 @@ function dig_unix_passwd () {
     while read -r thishash; do
         USER="$(grep "${thishash}" ${TARGET_ROOT_DIR}etc/shadow | cut -d':' -f 1)"
         [ $VERBOSE ] && out "   [-] Digging for hash: $thishash  ($USER) ..."
-        DUMP=`grep -C40 -E "$thishash|_pammodutil_getpwnam" "$swap_dump_path"`
+        DUMP=`grep -C50 -E "$thishash" "$swap_dump_path";grep -C30 "_pammodutil_getpwnam" "$swap_dump_path";grep -A1 "^sudo " "$swap_dump_path"`
         CTYPE="$(echo "$thishash" | cut -c-3)"
         SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
         while read -r line; do
@@ -648,3 +648,14 @@ fi
 end
 
 
+# TODOs
+#function dig_hash () {
+    # grep "^network-probe:" swap_dump.txt
+    # grep "^hls:" swap_dump.txt
+    # grep "^sha256:" swap_dump.txt
+    # grep "^md5:" swap_dump.txt
+    
+#}
+# cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
+# aeskeyfind, rsakeyfind (binary dump?)
+# mysql -u x -p y ?
