@@ -1,5 +1,24 @@
 #!/bin/bash
-# swap_digger by Emeric Nasi (Sio) at blog.sevagas.com
+#
+# Copyright Emeric Nasi
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-
+#    swap_digger is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    swap_digger is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with Thylacine  If not, see <http://www.gnu.org/licenses/>.
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-
+#
+# http://blog.sevagas.com
+# https://github.com/sevagas/swap_digger
+
 
 declare -r  working_path="/tmp/swap_dig"
 declare -r swap_dump_path="${working_path}/swap_dump.txt"
@@ -577,9 +596,9 @@ function swap_search () {
 # display_usage function
 display_usage ()
 {
-	echo "Search for credentials in Linux system SWAP memory."
+	echo "Searches for credentials and other sensitive data in Linux SWAP memory."
 	echo "Usage: $0 [ OPTIONS ]"
-	echo " Options : "
+	echo "Options : "
 	echo "  -x, --extendedRun Extended tests on the target swap to retrieve other interesting data"
 	echo "		(web passwords, emails, wifi creds, most accessed urls, etc)"
     echo "  -g, --guessing  Try to guess potential passwords based on observations and stats"
@@ -596,6 +615,8 @@ display_usage ()
     echo "		This option should be used with the -r option where at least /<root-path>/etc/shadow exists."
     echo "  -S, --swap-search   Search for all available swap devices (use for forensics)."
 	echo
+    echo "  For more details see the README.md file at https://github.com/sevagas/swap_digger"
+    echo
 }
 
 
