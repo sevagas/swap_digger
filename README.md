@@ -11,8 +11,7 @@ HTTP basic authentication, WiFi SSID and keys, etc.
 
 ### On your machine
 
-Use the following commands to download and run the script on your machine
-(N.B. it should be run as root).
+Use the following commands to download and run the script on your machine:
 
 ```bash
 alice@1nvuln3r4bl3:~$ git clone https://github.com/sevagas/swap_digger.git
@@ -25,20 +24,28 @@ alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -vx
 
 ### On a mounted hard drive
 
-For forensics on a mounted hard drive:
+To use swap\_digger on a mounted hard drive, do the following:
 
-Get target swap file/partition with
+First, download the script using the following commands:
+```bash
+alice@1nvuln3r4bl3:~$ git clone https://github.com/sevagas/swap_digger.git
+alice@1nvuln3r4bl3:~$ cd swap_digger
+alice@1nvuln3r4bl3:~$ chmod +x swap_digger.sh
+```
+
+Then, find the target swap file/partition with:
 ```bash
 alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -S
 ``` 
 
-Analyse target with
+Finally, analyze the target by running:
 ```bash
 alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -vx -r path/to/mounted/target/root/fs -s path/to/target/swap/device
 ```
 
-----------------------------------
-Download and complete run in a third party machine (for post exploitation in pentests or CTFs):
+### On a third party machine
+
+Use the following commands to download and run the script on a third party machine (useful for pentests and CTFs):
 
 ```bash
 alice@1nvuln3r4bl3:~$ wget https://raw.githubusercontent.com/sevagas/swap_digger/master/swap_digger.sh
@@ -49,15 +56,14 @@ alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -vx
 Note: Use the `-c` option to automatically remove the directory created by swap\_digger (`/tmp/swap_dig`).
  
  
----------------------------------
+## Simple run
 
-If you just want to grab linux users acounts clear text passwords run:
+If you only need to recover clear text Linux user passwords, simply run:
 ```bash
 alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh
 ```
 
-
----------------------------------
+## Available options
 
 All options:
 ```
@@ -80,17 +86,16 @@ All options:
   -S, --swap-search   Search for all available swap devices (use for forensics).
 ```
   
----------------------------------
+## Relevant resources
 
 Blog posts about swap digging:
  - http://blog.sevagas.com/?Digging-passwords-in-Linux-swap
 
-
----------------------------------
+## Contact
 
 Feel free to message me on my Twitter account [@EmericNasi](http://twitter.com/EmericNasi)
 
-## License
+## License and credits
 
 [The GNU General Public License version 3](https://opensource.org/licenses/GPL-3.0)
 
