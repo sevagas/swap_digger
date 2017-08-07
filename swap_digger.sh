@@ -599,7 +599,7 @@ display_usage ()
 	echo "Searches for credentials and other sensitive data in Linux SWAP memory."
 	echo "Usage: $0 [ OPTIONS ]"
 	echo "Options : "
-	echo "  -x, --extendedRun Extended tests on the target swap to retrieve other interesting data"
+	echo "  -x, --extended  Run extended tests on the target swap to retrieve other interesting data"
 	echo "		(web passwords, emails, wifi creds, most accessed urls, etc)"
     echo "  -g, --guessing  Try to guess potential passwords based on observations and stats"
 	echo "		Warning: This option is not reliable, it may dig more passwords as well as hundreds false positives."

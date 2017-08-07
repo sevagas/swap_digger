@@ -69,7 +69,7 @@ All options:
 ```
  ./swap_digger.sh [ OPTIONS ]
  Options : 
-  -x, --extendedRun Extended tests on the target swap to retrieve other interesting data
+  -x, --extended    Run Extended tests on the target swap to retrieve other interesting data
         (web passwords, emails, wifi creds, most accessed urls, etc)
   -g, --guessing  Try to guess potential passwords based on observations and stats
         Warning: This option is not reliable, it may dig more passwords as well as hundreds false positives.
