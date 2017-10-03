@@ -1,4 +1,4 @@
-![Bash version](https://img.shields.io/badge/Bash-4-brightgreen.svg)![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
+![Bash version](https://img.shields.io/badge/Bash-4-brightgreen.svg) ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 # swap\_digger
 
