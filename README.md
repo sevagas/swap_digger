@@ -1,3 +1,5 @@
+![Bash version](https://img.shields.io/badge/Bash-4-brightgreen.svg)![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
+
 # swap\_digger
 
 swap\_digger is a bash script used to automate Linux swap analysis for
