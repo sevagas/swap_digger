@@ -67,9 +67,9 @@ ask () {
 }
 
 
-function init () {    
+function init () {
     #User must be root
-    if [ `/usr/bin/id -u` -ne 0 ] 
+    if [ `/usr/bin/id -u` -ne 0 ]
     then
         echo -e "\033[40m\033[1;31m  [!]  Sorry, this script needs root access -> abort! $1\033[0m "  >&2
         exit 1
@@ -84,7 +84,7 @@ function init () {
         now=`date +%Y-%m-%d.%H:%M:%S`
         LOG_FILE="$working_path/output_${now}.log"
     }
-    
+
     out
     blue "- SWAP Digger -"
     [ $LOG ] && note "Logging all outputs in $LOG_FILE"
@@ -92,10 +92,10 @@ function init () {
     # Check param values
     [ $SWAP_PATH ] &&  ! [ -e "$SWAP_PATH" ] && { error "Invalid path for swap file!"; exit 1; }
     ! [ -d "$TARGET_ROOT_DIR" ] && { error "Invalid path for root directory!"; exit 1; }
-    
+
 }
 
-function end () { 
+function end () {
     out
     blue "SWAP Digger end, byebye! "
     out
@@ -118,7 +118,7 @@ function dig_unix_passwd () {
     while read -r thishash; do
         USER="$(grep "${thishash}" ${TARGET_ROOT_DIR}etc/shadow | cut -d':' -f 1)"
         [ $VERBOSE ] && out "   [-] Digging for hash: $thishash  ($USER) ..."
-        DUMP=`grep -C50 -E "$thishash" "$swap_dump_path";grep -C30 "_pammodutil_getpwnam" "$swap_dump_path";grep -A1 "^sudo " "$swap_dump_path"`
+        DUMP=`grep -C50 -E "$thishash" "$swap_dump_path";grep -C30 "_pammodutil_getpwnam" "$swap_dump_path";grep -A1 "^sudo " "$swap_dump_path";grep -C5 "gdm-password" "$swap_dump_path"`
         CTYPE="$(echo "$thishash" | cut -c-3)"
         SHADOWSALT="$(echo "$thishash" | cut -d'$' -f 3)"
         while read -r line; do
@@ -184,7 +184,7 @@ function dig_unix_passwd () {
                     passwordList=("${passwordList[@]}" "$password") # Add found password to list
                 done
                 IFS=$OLDIFS
-            
+
                 if ask "Do you wan to delete john pot?"
                 then
                     out "   [-] clean John pot..."
@@ -287,7 +287,7 @@ function dig_xml() {
         fi
     done
     IFS=$OLDIFS
-    
+
 }
 
 
@@ -326,12 +326,12 @@ function dig_wifi_info () {
         out "$password"
     done
     IFS=$OLDIFS
-    
+
 }
 
 
 function dig_keepass () {
-    
+
     # Looking for keepass
     if  grep -C 8  "\.kdb" "$swap_dump_path" | grep -q KeePass
     then
@@ -412,7 +412,7 @@ function dig_history () {
         out "   -> $entry"
     done
     IFS=$OLDIFS
-    
+
 }
 
 
@@ -441,7 +441,7 @@ function guessing () {
         warning " 2 or more passwords are needed for guessing feature."
         return
     fi
-    
+
     out
     out " [+] Start statistic guessing round 1... (wait for it)"
     OLDIFS=$IFS; IFS=$'\n';
@@ -519,7 +519,7 @@ function guessing () {
 function swap_digger () {
 
     # Find swap partition
-    if [ -f "$swap_dump_path" ] 
+    if [ -f "$swap_dump_path" ]
     then
         out " [+] Swap dump already available at $swap_dump_path"
     else
@@ -589,7 +589,7 @@ function swap_search () {
         isSwap "$file" && out "   -> $file"
     done
     IFS=$OLDIFS
-    
+
 }
 
 
@@ -643,7 +643,7 @@ done
 # Parse short options
 OPTIND=1
 while getopts "cxglhvS-r:s:" OPT
-do  
+do
    # options processing
 	case $OPT in
         c) CLEAN=1 ;;
@@ -675,7 +675,7 @@ end
     # grep "^hls:" swap_dump.txt
     # grep "^sha256:" swap_dump.txt
     # grep "^md5:" swap_dump.txt
-    
+
 #}
 # cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
 # aeskeyfind, rsakeyfind (binary dump?)
