@@ -214,6 +214,16 @@ function dig_web_info () {
             passwordList=("${passwordList[@]}" "$password") # Add found password to list
         fi
     done
+    for entry in `grep "&pwd=" "$swap_dump_path"`
+    do
+        out "   -> $entry"
+        password=`echo "$entry" | grep -o 'pwd=[^&]\+' | cut -f 2 -d '='`
+        passwdSize=`echo $password | wc -c`
+        if [[ $passwdSize -gt 6 ]]
+        then
+            passwordList=("${passwordList[@]}" "$password") # Add found password to list
+        fi
+    done
     IFS=$OLDIFS
     out
     out " [+] Looking for web passwords method 2 (JSON) ..."
