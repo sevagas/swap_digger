@@ -542,7 +542,7 @@ function swap_digger () {
         else
             out " [+] Looking for swap partition"
             swap=`cat /proc/swaps | grep -o "/[^ ]\+"`
-            [ -b "$swap" ] || swap=`swapon -s | grep dev | cut -d " " -f 1`
+            [ -f "$swap" ] || [ -b "$swap" ] || swap=`swapon -s | grep dev | cut -d " " -f 1`
             [ -b "$swap" ] ||  { error "Could not find swap partition -> abort!"; exit 1; }
             out "     -> Found swap at ${swap}"
             # Dumping swap strings
@@ -617,10 +617,10 @@ display_usage ()
     echo "  -v, --verbose	Verbose mode."
     echo "  -l, --log	Log all outputs in a log file (protected inside the generated working directory)."
     echo "  -c, --clean Automatically erase the generated working directory at end of script (will also remove log file)"
-    echo "  -r PATH, --root-path=PATH   Location of the target file-system root (default value is /)"
+    echo "  -r PATH, --root-path PATH   Location of the target file-system root (default value is /)"
 	echo "		Change this value for forensic analysis when target is a mounted file system."
     echo "		This option has to  be used along the -s option to indicate path to swap device."
-    echo "  -s PATH, --swap-path=PATH   Location of swap device or swap dump to analyse"
+    echo "  -s PATH, --swap-path PATH   Location of swap device or swap dump to analyse"
     echo "		Use this option for forensic/remote analysis of a swap dump or a mounted external swap partition."
     echo "		This option should be used with the -r option where at least /<root-path>/etc/shadow exists."
     echo "  -S, --swap-search   Search for all available swap devices (use for forensics)."
