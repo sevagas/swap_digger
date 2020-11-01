@@ -16,10 +16,10 @@ HTTP basic authentication, WiFi SSID and keys, etc.
 Use the following commands to download and run the script on your machine:
 
 ```bash
-alice@1nvuln3r4bl3:~$ git clone https://github.com/sevagas/swap_digger.git
-alice@1nvuln3r4bl3:~$ cd swap_digger
-alice@1nvuln3r4bl3:~$ chmod +x swap_digger.sh
-alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -vx
+git clone https://github.com/sevagas/swap_digger.git
+cd swap_digger
+chmod +x swap_digger.sh
+sudo ./swap_digger.sh -vx
 ```
 
 ![Extended run](/assets/swap_digger_extended.png?raw=true "Extended run")
@@ -30,19 +30,19 @@ To use swap\_digger on a mounted hard drive, do the following:
 
 First, download the script using the following commands:
 ```bash
-alice@1nvuln3r4bl3:~$ git clone https://github.com/sevagas/swap_digger.git
-alice@1nvuln3r4bl3:~$ cd swap_digger
-alice@1nvuln3r4bl3:~$ chmod +x swap_digger.sh
+git clone https://github.com/sevagas/swap_digger.git
+cd swap_digger
+chmod +x swap_digger.sh
 ```
 
 Then, find the target swap file/partition with:
 ```bash
-alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -S
+sudo ./swap_digger.sh -S
 ``` 
 
 Finally, analyze the target by running:
 ```bash
-alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -vx -r path/to/mounted/target/root/fs -s path/to/target/swap/device
+sudo ./swap_digger.sh -vx -r path/to/mounted/target/root/fs -s path/to/target/swap/device
 ```
 
 ### On a third party machine
@@ -50,9 +50,9 @@ alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -vx -r path/to/mounted/target/root/f
 Use the following commands to download and run the script on a third party machine (useful for pentests and CTFs):
 
 ```bash
-alice@1nvuln3r4bl3:~$ wget https://raw.githubusercontent.com/sevagas/swap_digger/master/swap_digger.sh
-alice@1nvuln3r4bl3:~$ chmod +x swap_digger.sh
-alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh -vx
+wget https://raw.githubusercontent.com/sevagas/swap_digger/master/swap_digger.sh
+chmod +x swap_digger.sh
+sudo ./swap_digger.sh -vx -c
 ```
 
 Note: Use the `-c` option to automatically remove the directory created by swap\_digger (`/tmp/swap_dig`).
@@ -62,7 +62,7 @@ Note: Use the `-c` option to automatically remove the directory created by swap\
 
 If you only need to recover clear text Linux user passwords, simply run:
 ```bash
-alice@1nvuln3r4bl3:~$ sudo ./swap_digger.sh
+sudo ./swap_digger.sh
 ```
 
 ## Available options
@@ -91,7 +91,7 @@ All options:
 ## Relevant resources
 
 Blog posts about swap digging:
- - http://blog.sevagas.com/?Digging-passwords-in-Linux-swap
+ - https://blog.sevagas.com/?Digging-passwords-in-Linux-swap
 
 ## Contact
 
@@ -101,4 +101,4 @@ Feel free to message me on my Twitter account [@EmericNasi](http://twitter.com/E
 
 [The GNU General Public License version 3](https://opensource.org/licenses/GPL-3.0)
 
-Copyright 2017 Emeric “Sio” Nasi ([blog](http://blog.sevagas.com))
+Copyright 2017-2021 Emeric “Sio” Nasi ([blog](https://blog.sevagas.com))
