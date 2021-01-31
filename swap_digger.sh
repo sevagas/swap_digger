@@ -125,7 +125,7 @@ function dig_unix_passwd () {
             #Escape quotes, backslashes, single quotes to pass into crypt
             SAFE=$(echo "$line" | sed 's/\\/\\\\/g; s/\"/\\"/g; s/'"'"'/\\'"'"'/g;')
             CRYPT="\"$SAFE\", \"$CTYPE$SHADOWSALT\""
-            if [[ $(python2 -c "import crypt; print crypt.crypt($CRYPT)") == "$thishash" ]]; then
+            if [[ $(python3 -c "import crypt; print(crypt.crypt($CRYPT))") == "$thishash" ]]; then
                 #Find which user's password it is (useful if used more than once!)
                 out "   -> $USER:$line"
                 passwordList=("${passwordList[@]}" "$line")
@@ -151,7 +151,7 @@ function dig_unix_passwd () {
                 #Escape quotes, backslashes, single quotes to pass into crypt
                 SAFE=$(echo "$line" | sed 's/\\/\\\\/g; s/\"/\\"/g; s/'"'"'/\\'"'"'/g;')
                 CRYPT="\"$SAFE\", \"$CTYPE$SHADOWSALT\""
-                if [[ $(python2 -c "import crypt; print crypt.crypt($CRYPT)") == "$thishash" ]]; then
+                if [[ $(python3 -c "import crypt; print(crypt.crypt($CRYPT))") == "$thishash" ]]; then
                     #Find which user's password it is (useful if used more than once!)
                     USER="$(grep "${thishash}" ${TARGET_ROOT_DIR}etc/shadow | cut -d':' -f 1)"
                     out "   -> $USER:$line"
