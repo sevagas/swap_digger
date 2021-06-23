@@ -426,6 +426,77 @@ function dig_history () {
 }
 
 
+function dig_hashes () {
+    local N=5
+    out
+    out
+    blue " ==== Mining hashes ==="
+    out
+    OLDIFS=$IFS; IFS=$'\n';
+    # Grep for md5:-prefix followed by 32 hex-characters
+    md5sums=( $(grep -o -i -E  "^(md5:[a-fA-F0-9]{32})" "$swap_dump_path") )
+    if [ "${#md5sums[@]}" -eq 0 ];
+    then
+	out " [-] No MD5-hashes found"
+    else
+        out " [+] MD5-hashes"
+    fi
+    for entry in "${md5sums[@]}";
+    do
+	out "   -> $entry"
+    done
+    # Grep for sha1:-prefix followed by 40 hex-characters
+    sha1sums=( $(grep -o -i -E  "^(sha1:[a-f0-9]{40})" "$swap_dump_path") )
+    if [ "${#sha1sums[@]}" -eq 0 ];
+    then
+        out " [-] No SHA1-hashes found"
+    else
+        out " [+] SHA1-hashes"
+    fi
+    for entry in "${sha1sums[@]}";
+    do
+	out "   -> $entry"
+    done
+    # Grep for sha256:-prefix followed by 64 hex-characters
+    sha256sums=( $(grep -o -i -E  "^(sha256:[a-f0-9]{64})" "$swap_dump_path") )
+    if [ "${#sha256sums[@]}" -eq 0 ];
+    then
+        out " [-] No SHA256-hashes found"
+    else
+        out " [+] SHA256-hashes"
+    fi
+    for entry in "${sha256sums[@]}"
+    do
+	out "   -> $entry"
+    done
+    # Grep for sha512:-prefix followed by 32 hex-characters
+    sha512sums=( $(grep -o -i -E  "^(sha512:[a-f0-9]{128})" "$swap_dump_path") )
+    if [ "${#sha512sums[@]}" -eq 0 ];
+    then
+        out " [-] No SHA512-hashes found"
+    else
+        out " [+] SHA512-hashes"
+    fi
+    for entry in "${sha512sums[@]}"
+    do
+        out "   -> $entry"
+    done
+    # Grep for $2a$:-prefix followed by 75 hex-characters
+    bfsums=( $(grep -o -i -E '^(\$2[ay]\$[0-9]*\$[.a-z0-9]{22}[.a-z/0-9]{31})' "$swap_dump_path") )
+    if [ "${#bfsums[@]}" -eq 0 ];
+    then
+        out " [-] No Blowfish-hashes found"
+    else
+        out " [+] Blowfish-Hashes"
+    fi
+    for entry in "${bfsums[@]}"
+    do
+        out "   -> $entry"
+    done
+    OLDIFS=$IFS; IFS=$'\n';
+}
+
+
 function guessing () {
 
     out
@@ -560,6 +631,7 @@ function swap_digger () {
         dig_wifi_info
         dig_keepass
         dig_history
+        dig_hashes
     }
     [ $GUESSING ] && guessing
 
@@ -680,13 +752,8 @@ end
 
 
 # TODOs
-#function dig_hash () {
-    # grep "^network-probe:" swap_dump.txt
-    # grep "^hls:" swap_dump.txt
-    # grep "^sha256:" swap_dump.txt
-    # grep "^md5:" swap_dump.txt
-
-#}
+# grep "^network-probe:" swap_dump.txt
+# grep "^hls:" swap_dump.txt
 # cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
 # aeskeyfind, rsakeyfind (binary dump?)
 # mysql -u x -p y ?
