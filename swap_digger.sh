@@ -543,7 +543,7 @@ function swap_digger () {
             out " [+] Looking for swap partition"
             swap=`cat /proc/swaps | grep -o "/[^ ]\+"`
             [ -f "$swap" ] || [ -b "$swap" ] || swap=`swapon -s | grep dev | cut -d " " -f 1`
-            [ -b "$swap" ] ||  { error "Could not find swap partition -> abort!"; exit 1; }
+            [ -e "$swap" ] ||  { error "Could not find swap partition -> abort!"; exit 1; }
             out "     -> Found swap at ${swap}"
             # Dumping swap strings
             out " [+] Dumping swap strings in $swap_dump_path ... (this may take some time) "
