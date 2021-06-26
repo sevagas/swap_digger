@@ -93,6 +93,14 @@ function init () {
     [ $SWAP_PATH ] &&  ! [ -e "$SWAP_PATH" ] && { error "Invalid path for swap file!"; exit 1; }
     ! [ -d "$TARGET_ROOT_DIR" ] && { error "Invalid path for root directory!"; exit 1; }
 
+    # Check, that an action was specified (search, passwd retrieval or application data mining)
+    [ -z $SWAP_SEARCH ] && [ -z $PASSWD ] && [ -z $APPLICATION_DATA ] && {
+	error "Specify one of the following actions:"
+	echo -e "   \033[40m\033[1;31m  -S   search for swap devices!"
+	echo -e "     -a   mine for application data "
+	echo -e "     -p   mine for system passwds "  >&2
+	exit 1
+    }
 }
 
 function end () {
@@ -426,6 +434,77 @@ function dig_history () {
 }
 
 
+function dig_hashes () {
+    local N=5
+    out
+    out
+    blue " ==== Mining hashes ==="
+    out
+    OLDIFS=$IFS; IFS=$'\n';
+    # Grep for md5:-prefix followed by 32 hex-characters
+    md5sums=( $(grep -o -i -E  "^(md5:[a-fA-F0-9]{32})" "$swap_dump_path") )
+    if [ "${#md5sums[@]}" -eq 0 ];
+    then
+	out " [-] No MD5-hashes found"
+    else
+        out " [+] MD5-hashes"
+    fi
+    for entry in "${md5sums[@]}";
+    do
+	out "   -> $entry"
+    done
+    # Grep for sha1:-prefix followed by 40 hex-characters
+    sha1sums=( $(grep -o -i -E  "^(sha1:[a-f0-9]{40})" "$swap_dump_path") )
+    if [ "${#sha1sums[@]}" -eq 0 ];
+    then
+        out " [-] No SHA1-hashes found"
+    else
+        out " [+] SHA1-hashes"
+    fi
+    for entry in "${sha1sums[@]}";
+    do
+	out "   -> $entry"
+    done
+    # Grep for sha256:-prefix followed by 64 hex-characters
+    sha256sums=( $(grep -o -i -E  "^(sha256:[a-f0-9]{64})" "$swap_dump_path") )
+    if [ "${#sha256sums[@]}" -eq 0 ];
+    then
+        out " [-] No SHA256-hashes found"
+    else
+        out " [+] SHA256-hashes"
+    fi
+    for entry in "${sha256sums[@]}"
+    do
+	out "   -> $entry"
+    done
+    # Grep for sha512:-prefix followed by 32 hex-characters
+    sha512sums=( $(grep -o -i -E  "^(sha512:[a-f0-9]{128})" "$swap_dump_path") )
+    if [ "${#sha512sums[@]}" -eq 0 ];
+    then
+        out " [-] No SHA512-hashes found"
+    else
+        out " [+] SHA512-hashes"
+    fi
+    for entry in "${sha512sums[@]}"
+    do
+        out "   -> $entry"
+    done
+    # Grep for $2a$:-prefix followed by 75 hex-characters
+    bfsums=( $(grep -o -i -E '^(\$2[ay]\$[0-9]*\$[.a-z0-9]{22}[.a-z/0-9]{31})' "$swap_dump_path") )
+    if [ "${#bfsums[@]}" -eq 0 ];
+    then
+        out " [-] No Blowfish-hashes found"
+    else
+        out " [+] Blowfish-Hashes"
+    fi
+    for entry in "${bfsums[@]}"
+    do
+        out "   -> $entry"
+    done
+    OLDIFS=$IFS; IFS=$'\n';
+}
+
+
 function guessing () {
 
     out
@@ -553,16 +632,16 @@ function swap_digger () {
     swap_dump_size=`ls -lh $swap_dump_path | cut -d " "  -f 5`
     [ $VERBOSE ] && out "    [-] Swap dump size: $swap_dump_size"
     # Let the fun begin!
-    dig_unix_passwd
-    [ $EXTENDED ] && {
-        dig_web_info
-        dig_xml
-        dig_wifi_info
-        dig_keepass
-        dig_history
+    [ $PASSWD ] && dig_unix_passwd
+    [ $APPLICATION_DATA ] && {
+	dig_web_info
+	dig_xml
+	dig_wifi_info
+	dig_keepass
+	dig_history
+	dig_hashes
     }
     [ $GUESSING ] && guessing
-
 }
 
 
@@ -606,25 +685,28 @@ function swap_search () {
 # display_usage function
 display_usage ()
 {
-	echo "Searches for credentials and other sensitive data in Linux SWAP memory."
-	echo "Usage: $0 [ OPTIONS ]"
-	echo "Options : "
-	echo "  -x, --extended  Run extended tests on the target swap to retrieve other interesting data"
-	echo "		(web passwords, emails, wifi creds, most accessed urls, etc)"
-    echo "  -g, --guessing  Try to guess potential passwords based on observations and stats"
-	echo "		Warning: This option is not reliable, it may dig more passwords as well as hundreds false positives."
-	echo "  -h, --help	Display this help."
-    echo "  -v, --verbose	Verbose mode."
-    echo "  -l, --log	Log all outputs in a log file (protected inside the generated working directory)."
-    echo "  -c, --clean Automatically erase the generated working directory at end of script (will also remove log file)"
+    echo "Searches for valuable and sensitive data in Linux SWAP memory."
+    echo "Usage: $0 [ OPTIONS ]"
+    echo
+    echo "Options : "
+    echo "  -p, --passwd                Search for system passwords"
+    echo "  -g, --guessing              Try to guess potential passwords based on observations and stats."
+    echo "                              hundreds false positives. (Warning: This option is not reliable, "
+    echo "                              it may dig more passwords as well as "
+    echo "  -a, --app-data              Run extended tests on the target swap to retrieve other interesting data"
+    echo "                              (web passwords, emails, wifi creds, most accessed URLs, hashes etc)"
+    echo "  -v, --verbose               Verbose mode."
+    echo "  -l, --log                   Log all outputs in a log file (protected inside the generated working directory)."
+    echo "  -c, --clean                 Automatically erase the generated working directory at end of script (will also remove log file)"
     echo "  -r PATH, --root-path PATH   Location of the target file-system root (default value is /)"
-	echo "		Change this value for forensic analysis when target is a mounted file system."
-    echo "		This option has to  be used along the -s option to indicate path to swap device."
+    echo "                              Change this value for forensic analysis when target is a mounted file system."
+    echo "                              This option has to  be used along the -s option to indicate path to swap device."
     echo "  -s PATH, --swap-path PATH   Location of swap device or swap dump to analyse"
-    echo "		Use this option for forensic/remote analysis of a swap dump or a mounted external swap partition."
-    echo "		This option should be used with the -r option where at least /<root-path>/etc/shadow exists."
-    echo "  -S, --swap-search   Search for all available swap devices (use for forensics)."
-	echo
+    echo "                              Use this option for forensic/remote analysis of a swap dump or a mounted external swap partition."
+    echo "                              This option should be used with the -r option where at least /<root-path>/etc/shadow exists."
+    echo "  -S, --swap-search           Search for all available swap devices."
+    echo "  -h, --help                  Display this help."
+    echo
     echo "  For more details see the README.md file at https://github.com/sevagas/swap_digger"
     echo
 }
@@ -637,9 +719,10 @@ for arg in "$@"; do
   shift
   case "$arg" in
     "--clean") set -- "$@" "-c" ;;
-    "--extended") set -- "$@" "-x" ;;
+    "--app-data") set -- "$@" "-x" ;;
     "--guessing") set -- "$@" "-g" ;;
     "--log") set -- "$@" "-l" ;;
+    "--passwd") set -- "$@" "-p" ;;
     "--help") set -- "$@" "-h" ;;
     "--verbose") set -- "$@" "-v" ;;
     "--root-path") set -- "$@" "-r" ;;
@@ -652,20 +735,21 @@ done
 
 # Parse short options
 OPTIND=1
-while getopts "cxglhvS-r:s:" OPT
+while getopts "acglphvS-r:s:" OPT
 do
-   # options processing
-	case $OPT in
-        c) CLEAN=1 ;;
-        l) LOG=1 ;;
-        r) TARGET_ROOT_DIR="$OPTARG" ;;
-        s) SWAP_PATH="$OPTARG" ;;
-		x) EXTENDED=1 ;;
-        g) GUESSING=1 ;;
-		h) display_usage | more;  exit 3  ;;
-		v) VERBOSE=1 ;;
-        S) SWAP_SEARCH=1 ;;
-		*) display_usage; exit 1 ;;
+    # options processing
+    case $OPT in
+	c) CLEAN=1 ;;
+	g) GUESSING=1 ;;
+	l) LOG=1 ;;
+	p) PASSWD=1 ;;
+	r) TARGET_ROOT_DIR="$OPTARG" ;;
+	s) SWAP_PATH="$OPTARG" ;;
+	a) APPLICATION_DATA=1 ;;
+	h) display_usage | more;  exit 3  ;;
+	v) VERBOSE=1 ;;
+	S) SWAP_SEARCH=1 ;;
+	*) display_usage; exit 1 ;;
 	esac
 done
 shift $(expr $OPTIND - 1) # remove options from positional parameters
@@ -680,13 +764,8 @@ end
 
 
 # TODOs
-#function dig_hash () {
-    # grep "^network-probe:" swap_dump.txt
-    # grep "^hls:" swap_dump.txt
-    # grep "^sha256:" swap_dump.txt
-    # grep "^md5:" swap_dump.txt
-
-#}
+# grep "^network-probe:" swap_dump.txt
+# grep "^hls:" swap_dump.txt
 # cat swap_dump.txt |  grep -C 50 "smb://" | grep -C 30  "WORKGROUP"
 # aeskeyfind, rsakeyfind (binary dump?)
 # mysql -u x -p y ?
