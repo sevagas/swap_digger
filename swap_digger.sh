@@ -96,7 +96,7 @@ function init () {
     # Check, that an action was specified (search, passwd retrieval or application data mining)
     [ -z $SWAP_SEARCH ] && [ -z $PASSWD ] && [ -z $APPLICATION_DATA ] && {
 	error "Specify one of the following actions:"
-	echo -e "   \033[40m\033[1;31m  -S   search for swap devices!"
+	echo -e "     -S   search for swap devices!"
 	echo -e "     -a   mine for application data "
 	echo -e "     -p   mine for system passwds "  >&2
 	exit 1
